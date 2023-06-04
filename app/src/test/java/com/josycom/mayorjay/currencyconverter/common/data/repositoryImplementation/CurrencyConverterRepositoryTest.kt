@@ -1,8 +1,8 @@
 package com.josycom.mayorjay.currencyconverter.common.data.repositoryImplementation
 
-import androidx.work.WorkManager
 import com.josycom.mayorjay.currencyconverter.common.data.api.datasource.RemoteDataSource
 import com.josycom.mayorjay.currencyconverter.common.data.cache.datasource.LocalDataSource
+import com.josycom.mayorjay.currencyconverter.common.data.cacheupdate.CacheUpdateHandler
 import com.josycom.mayorjay.currencyconverter.common.domain.model.Currency
 import com.josycom.mayorjay.currencyconverter.common.domain.model.Rate
 import com.josycom.mayorjay.currencyconverter.common.domain.repository.CurrencyConverterRepository
@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import org.junit.Test
 import org.mockito.Mockito
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -22,14 +21,14 @@ class CurrencyConverterRepositoryTest : TestCase() {
     private lateinit var sut: CurrencyConverterRepository
     private lateinit var localDataSource: LocalDataSource
     private lateinit var remoteDataSource: RemoteDataSource
-    private lateinit var workManager: WorkManager
+    private lateinit var cacheUpdateHandler: CacheUpdateHandler
     private val dispatcher = UnconfinedTestDispatcher()
 
     override fun setUp() {
         localDataSource = Mockito.spy(LocalDataSource::class.java)
         remoteDataSource = Mockito.spy(RemoteDataSource::class.java)
-        workManager = Mockito.spy(WorkManager::class.java)
-        sut = CurrencyConverterRepositoryImpl(localDataSource, remoteDataSource, dispatcher, workManager)
+        cacheUpdateHandler = Mockito.mock(CacheUpdateHandler::class.java)
+        sut = CurrencyConverterRepositoryImpl(localDataSource, remoteDataSource, dispatcher, cacheUpdateHandler)
     }
 
     fun `test getCurrencies valid_items_retrieved_from_database`() {
@@ -124,27 +123,5 @@ class CurrencyConverterRepositoryTest : TestCase() {
         runBlocking { sut.getRateByCode(code) }
 
         Mockito.verify(localDataSource, Mockito.times(1)).getRateByCode(code)
-    }
-
-    @Test
-    fun `test initCacheUpdater _periodic_work_is_enqueued`() {
-        sut.initCacheUpdater()
-        Mockito.verify(workManager, Mockito.atLeastOnce()).enqueueUniquePeriodicWork(Mockito.any(), Mockito.any(), Mockito.any())
-    }
-
-    fun `test updateCachedCurrencies _remote_service_call_is_triggered`() {
-        runBlocking {
-            sut.updateCachedCurrencies()
-
-            Mockito.verify(remoteDataSource, Mockito.atLeastOnce()).getCurrencies()
-        }
-    }
-
-    fun `test updateCachedRates _remote_service_call_is_triggered`() {
-        runBlocking {
-            sut.updateCachedRates()
-
-            Mockito.verify(remoteDataSource, Mockito.atLeastOnce()).getRates()
-        }
     }
 }

@@ -1,7 +1,6 @@
 package com.josycom.mayorjay.currencyconverter.currencyconversion
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import androidx.work.WorkManager
 import com.josycom.mayorjay.currencyconverter.common.domain.model.Currency
 import com.josycom.mayorjay.currencyconverter.common.domain.model.Rate
 import com.josycom.mayorjay.currencyconverter.common.domain.repository.CurrencyConverterRepository
@@ -171,9 +170,9 @@ class CurrencyConversionViewModelTest : TestCase() {
     }
 
     @Test
-    fun `test initCacheUpdater _repository#initCacheUpdater_is_triggered`() {
-        sut.initCacheUpdater()
-        Mockito.verify(repository, Mockito.times(1)).initCacheUpdater()
+    fun `test performCacheUpdate _repository#performCacheUpdate_is_triggered`() = runBlocking {
+        sut.performCacheUpdate()
+        Mockito.verify(repository, Mockito.atLeast(1)).performCacheUpdate()
     }
 
     @Test

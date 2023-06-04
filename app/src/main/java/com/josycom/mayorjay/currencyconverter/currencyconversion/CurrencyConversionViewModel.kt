@@ -32,6 +32,10 @@ class CurrencyConversionViewModel @Inject constructor(
     fun getErrorMsgLiveData(): MutableLiveData<String> = errorMsgLiveData
     fun setErrorMsgLiveDataValue(value: String) { errorMsgLiveData.value = value }
 
+    private val performCacheUpdateLiveData: MutableLiveData<Boolean> = MutableLiveData()
+    fun getPerformCacheUpdateLiveData(): MutableLiveData<Boolean> = performCacheUpdateLiveData
+    private fun setPerformCacheUpdateLiveDataValue(value: Boolean) { performCacheUpdateLiveData.value = value }
+
     private var _currencySelected: String? = null
     var currencySelected: String?
         get() = _currencySelected
@@ -42,11 +46,9 @@ class CurrencyConversionViewModel @Inject constructor(
         get() = _amountInputted
         set(value) { _amountInputted = value }
 
-    init {
-        initCacheUpdater()
+    fun setUp(){
+        getLastUpdateTime()
     }
-
-    fun initCacheUpdater() = repository.initCacheUpdater()
 
     fun getCurrencies() {
         viewModelScope.launch {
@@ -62,6 +64,7 @@ class CurrencyConversionViewModel @Inject constructor(
             val rateFlow = repository.getRates()
             rateFlow.collect { rateResource ->
                 setRatesLiveDataValue(rateResource)
+                getLastUpdateTime()
             }
         }
     }
@@ -100,11 +103,34 @@ class CurrencyConversionViewModel @Inject constructor(
                 Timber.e(ex)
                 setRatesLiveDataValue(Resource.Error(ex))
             }
+            getLastUpdateTime()
         }
     }
 
     fun convertCurrency(amount: Double, fromCurrencyRate: Double, toCurrencyRate: Rate): Rate {
         val baseAmount = amount / fromCurrencyRate
         return toCurrencyRate.apply { this.amount = baseAmount * this.value }
+    }
+
+    private fun getLastUpdateTime() {
+        viewModelScope.launch {
+            val timeFlow = repository.getLastUpdateTime()
+            timeFlow.collect { time ->
+                setPerformCacheUpdateLiveDataValue(compareTime(time))
+            }
+        }
+    }
+
+    private fun compareTime(previous: Long): Boolean {
+        val current = System.currentTimeMillis()
+        val diff = current - previous
+        val diffInMin = diff / 60000
+        return diffInMin >= Constants.UPDATE_INTERVAL
+    }
+
+    fun performCacheUpdate() {
+        viewModelScope.launch {
+            repository.performCacheUpdate()
+        }
     }
 }

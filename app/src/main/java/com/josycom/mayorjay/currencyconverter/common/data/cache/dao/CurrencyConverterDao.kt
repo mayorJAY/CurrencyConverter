@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.josycom.mayorjay.currencyconverter.common.data.cache.model.CurrencyEntity
 import com.josycom.mayorjay.currencyconverter.common.data.cache.model.RateEntity
+import com.josycom.mayorjay.currencyconverter.common.data.cache.model.TimeEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -31,4 +32,13 @@ interface CurrencyConverterDao {
 
     @Query("DELETE FROM rate")
     suspend fun deleteAllRates()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTime(time: TimeEntity)
+
+    @Query("SELECT last_update_time FROM time limit 1")
+    fun getLastUpdateTime(): Flow<Long>
+
+    @Query("DELETE FROM time")
+    suspend fun deleteTime()
 }

@@ -48,12 +48,15 @@ class CurrencyConversionFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setUpViewModel()
         getCurrencies()
         getRates() //Display the rates for each currency instead of showing a blank screen
         setupRecyclerView()
         setupListeners()
         observeLiveData()
     }
+
+    private fun setUpViewModel() = viewModel.setUp()
 
     private fun setupRecyclerView() {
         binding.rvRates.apply {
@@ -164,6 +167,10 @@ class CurrencyConversionFragment : Fragment() {
             msg.showToast(requireContext())
             viewModel.setErrorMsgLiveDataValue(Constants.EMPTY_STRING_VALUE)
         }
+
+        viewModel.getPerformCacheUpdateLiveData().observe(viewLifecycleOwner) { performUpdate ->
+            if (performUpdate) performCacheUpdate()
+        }
     }
 
     private fun populateSpinner(currencies: List<Currency>) {
@@ -185,6 +192,8 @@ class CurrencyConversionFragment : Fragment() {
             fromCurrency ?: Constants.EMPTY_STRING_VALUE
         )
     }
+
+    private fun performCacheUpdate() = viewModel.performCacheUpdate()
 
     override fun onDestroyView() {
         super.onDestroyView()
