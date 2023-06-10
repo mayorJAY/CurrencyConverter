@@ -36,8 +36,8 @@ interface CurrencyConverterDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTime(time: TimeEntity)
 
-    @Query("SELECT last_update_time FROM time limit 1")
-    fun getLastUpdateTime(): Flow<Long>
+    @Query("SELECT last_update_time FROM time LIMIT 1")
+    fun getLastUpdateTime(): Flow<Long?>
 
     @Query("DELETE FROM time")
     suspend fun deleteTime()

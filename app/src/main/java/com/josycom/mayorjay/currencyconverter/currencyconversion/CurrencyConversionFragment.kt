@@ -48,15 +48,13 @@ class CurrencyConversionFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setUpViewModel()
         getCurrencies()
-        getRates() //Display the rates for each currency instead of showing a blank screen
+        getRates(true) //Display the rates for each currency instead of showing a blank screen
         setupRecyclerView()
         setupListeners()
         observeLiveData()
+        getLastUpdateTime()
     }
-
-    private fun setUpViewModel() = viewModel.setUp()
 
     private fun setupRecyclerView() {
         binding.rvRates.apply {
@@ -90,7 +88,7 @@ class CurrencyConversionFragment : Fragment() {
         binding.apply {
             etAmount.addTextChangedListener(afterTextChanged = {
                 if (it.toString().isEmptyOrNull()) {
-                    getRates() //Display the rates for each currency instead of showing the last converted amount
+                    getRates(false) //Display the rates for each currency instead of showing the last converted amount
                     viewModel.amountInputted = Constants.EMPTY_STRING_VALUE
                     return@addTextChangedListener
                 }
@@ -113,7 +111,7 @@ class CurrencyConversionFragment : Fragment() {
 
             ivStatus.setOnClickListener {
                 getCurrencies()
-                getRates()
+                getRates(false)
             }
         }
     }
@@ -184,7 +182,7 @@ class CurrencyConversionFragment : Fragment() {
 
     private fun getCurrencies() = viewModel.getCurrencies()
 
-    private fun getRates() = viewModel.getRates()
+    private fun getRates(isAppLaunch: Boolean) = viewModel.getRates(isAppLaunch)
 
     private fun convert(amount: Double?, fromCurrency: String?) {
         viewModel.convert(
@@ -192,6 +190,8 @@ class CurrencyConversionFragment : Fragment() {
             fromCurrency ?: Constants.EMPTY_STRING_VALUE
         )
     }
+
+    private fun getLastUpdateTime() = viewModel.getLastUpdateTime()
 
     private fun performCacheUpdate() = viewModel.performCacheUpdate()
 

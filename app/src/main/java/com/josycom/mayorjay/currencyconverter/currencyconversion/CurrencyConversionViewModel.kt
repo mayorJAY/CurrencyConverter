@@ -46,10 +46,6 @@ class CurrencyConversionViewModel @Inject constructor(
         get() = _amountInputted
         set(value) { _amountInputted = value }
 
-    fun setUp(){
-        getLastUpdateTime()
-    }
-
     fun getCurrencies() {
         viewModelScope.launch {
             val currencyFlow = repository.getCurrencies()
@@ -59,14 +55,14 @@ class CurrencyConversionViewModel @Inject constructor(
         }
     }
 
-    fun getRates() {
+    fun getRates(isAppLaunch: Boolean) {
         viewModelScope.launch {
             val rateFlow = repository.getRates()
             rateFlow.collect { rateResource ->
                 setRatesLiveDataValue(rateResource)
-                getLastUpdateTime()
             }
         }
+        if (!isAppLaunch) getLastUpdateTime()
     }
 
     fun getSpinnerItems(currencies: List<Currency>): List<String> {
@@ -103,8 +99,8 @@ class CurrencyConversionViewModel @Inject constructor(
                 Timber.e(ex)
                 setRatesLiveDataValue(Resource.Error(ex))
             }
-            getLastUpdateTime()
         }
+        getLastUpdateTime()
     }
 
     fun convertCurrency(amount: Double, fromCurrencyRate: Double, toCurrencyRate: Rate): Rate {
@@ -112,18 +108,18 @@ class CurrencyConversionViewModel @Inject constructor(
         return toCurrencyRate.apply { this.amount = baseAmount * this.value }
     }
 
-    private fun getLastUpdateTime() {
+    fun getLastUpdateTime() {
         viewModelScope.launch {
             val timeFlow = repository.getLastUpdateTime()
             timeFlow.collect { time ->
-                setPerformCacheUpdateLiveDataValue(compareTime(time))
+                time?.let { setPerformCacheUpdateLiveDataValue(isTimeValid(it)) }
             }
         }
     }
 
-    private fun compareTime(previous: Long): Boolean {
-        val current = System.currentTimeMillis()
-        val diff = current - previous
+    private fun isTimeValid(previousTime: Long): Boolean {
+        val currentTime = System.currentTimeMillis()
+        val diff = currentTime - previousTime
         val diffInMin = diff / 60000
         return diffInMin >= Constants.UPDATE_INTERVAL
     }

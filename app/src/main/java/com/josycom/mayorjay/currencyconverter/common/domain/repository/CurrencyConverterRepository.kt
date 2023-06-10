@@ -11,5 +11,5 @@ interface CurrencyConverterRepository {
     suspend fun getRates(): Flow<Resource<List<Rate>>>
     fun getRateByCode(code: String): Flow<Rate>
     suspend fun performCacheUpdate()
-    fun getLastUpdateTime(): Flow<Long>
+    fun getLastUpdateTime(): Flow<Long?>
 }

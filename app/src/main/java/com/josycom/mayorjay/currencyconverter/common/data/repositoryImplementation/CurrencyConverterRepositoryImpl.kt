@@ -67,7 +67,7 @@ class CurrencyConverterRepositoryImpl @Inject constructor(
         cacheUpdateHandler.updateCache()
     }
 
-    override fun getLastUpdateTime(): Flow<Long> {
+    override fun getLastUpdateTime(): Flow<Long?> {
         return localDataSource.getLastUpdateTime()
     }
 }

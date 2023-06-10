@@ -11,5 +11,5 @@ interface LocalDataSource {
     fun getRates(): Flow<List<Rate>>
     fun getRateByCode(code: String): Flow<Rate>
     suspend fun saveRates(rates: List<Rate>)
-    fun getLastUpdateTime(): Flow<Long>
+    fun getLastUpdateTime(): Flow<Long?>
 }

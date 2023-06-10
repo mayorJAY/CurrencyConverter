@@ -49,7 +49,7 @@ class LocalDataSourceImpl @Inject constructor(
         }
     }
 
-    override fun getLastUpdateTime(): Flow<Long> {
+    override fun getLastUpdateTime(): Flow<Long?> {
         return dao.getLastUpdateTime()
     }
 }

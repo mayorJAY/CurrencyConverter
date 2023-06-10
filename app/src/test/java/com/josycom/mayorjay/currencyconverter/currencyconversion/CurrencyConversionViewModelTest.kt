@@ -183,7 +183,7 @@ class CurrencyConversionViewModelTest : TestCase() {
 
     @Test
     fun `test getRates _repository#getRates_is_triggered`(): Unit = runBlocking {
-        sut.getRates()
+        sut.getRates(false)
         Mockito.verify(repository, Mockito.times(1)).getRates()
     }
 
