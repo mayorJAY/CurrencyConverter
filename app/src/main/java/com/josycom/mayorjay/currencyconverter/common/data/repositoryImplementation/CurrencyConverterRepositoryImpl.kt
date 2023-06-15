@@ -4,6 +4,7 @@ import com.josycom.mayorjay.currencyconverter.common.data.api.datasource.RemoteD
 import com.josycom.mayorjay.currencyconverter.common.data.cache.datasource.LocalDataSource
 import com.josycom.mayorjay.currencyconverter.common.data.cacheupdate.CacheUpdateHandler
 import com.josycom.mayorjay.currencyconverter.common.domain.model.Rate
+import com.josycom.mayorjay.currencyconverter.common.domain.model.Time
 import com.josycom.mayorjay.currencyconverter.common.domain.repository.CurrencyConverterRepository
 import com.josycom.mayorjay.currencyconverter.common.util.isEmptyOrNull
 import kotlinx.coroutines.CoroutineDispatcher
@@ -67,7 +68,11 @@ class CurrencyConverterRepositoryImpl @Inject constructor(
         cacheUpdateHandler.updateCache()
     }
 
-    override fun getLastUpdateTime(): Flow<Long?> {
-        return localDataSource.getLastUpdateTime()
+    override suspend fun saveTime(time: Time) {
+        localDataSource.saveTime(time)
+    }
+
+    override fun getTime(): Time? {
+        return localDataSource.getTime()
     }
 }

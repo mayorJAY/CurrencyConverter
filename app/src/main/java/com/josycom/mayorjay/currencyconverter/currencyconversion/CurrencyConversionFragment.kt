@@ -2,6 +2,7 @@ package com.josycom.mayorjay.currencyconverter.currencyconversion
 
 import android.graphics.Rect
 import android.os.Bundle
+import android.os.CountDownTimer
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -12,11 +13,13 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.josycom.mayorjay.currencyconverter.R
 import com.josycom.mayorjay.currencyconverter.common.domain.model.Currency
+import com.josycom.mayorjay.currencyconverter.common.domain.model.Time
 import com.josycom.mayorjay.currencyconverter.common.util.Constants
 import com.josycom.mayorjay.currencyconverter.common.util.Resource
 import com.josycom.mayorjay.currencyconverter.common.util.dpToPx
@@ -24,6 +27,7 @@ import com.josycom.mayorjay.currencyconverter.common.util.isEmptyOrNull
 import com.josycom.mayorjay.currencyconverter.common.util.showToast
 import com.josycom.mayorjay.currencyconverter.databinding.FragmentCurrencyConversionBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -34,6 +38,7 @@ class CurrencyConversionFragment : Fragment() {
     private val viewModel: CurrencyConversionViewModel by viewModels()
     @Inject
     lateinit var rateAdapter: RateAdapter
+    private lateinit var countDownTimer: CountDownTimer
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -49,11 +54,10 @@ class CurrencyConversionFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         getCurrencies()
-        getRates(true) //Display the rates for each currency instead of showing a blank screen
+        getRates() //Display the rates for each currency instead of showing a blank screen
         setupRecyclerView()
         setupListeners()
         observeLiveData()
-        getLastUpdateTime()
     }
 
     private fun setupRecyclerView() {
@@ -88,7 +92,7 @@ class CurrencyConversionFragment : Fragment() {
         binding.apply {
             etAmount.addTextChangedListener(afterTextChanged = {
                 if (it.toString().isEmptyOrNull()) {
-                    getRates(false) //Display the rates for each currency instead of showing the last converted amount
+                    getRates() //Display the rates for each currency instead of showing the last converted amount
                     viewModel.amountInputted = Constants.EMPTY_STRING_VALUE
                     return@addTextChangedListener
                 }
@@ -111,7 +115,7 @@ class CurrencyConversionFragment : Fragment() {
 
             ivStatus.setOnClickListener {
                 getCurrencies()
-                getRates(false)
+                getRates()
             }
         }
     }
@@ -165,10 +169,6 @@ class CurrencyConversionFragment : Fragment() {
             msg.showToast(requireContext())
             viewModel.setErrorMsgLiveDataValue(Constants.EMPTY_STRING_VALUE)
         }
-
-        viewModel.getPerformCacheUpdateLiveData().observe(viewLifecycleOwner) { performUpdate ->
-            if (performUpdate) performCacheUpdate()
-        }
     }
 
     private fun populateSpinner(currencies: List<Currency>) {
@@ -182,7 +182,7 @@ class CurrencyConversionFragment : Fragment() {
 
     private fun getCurrencies() = viewModel.getCurrencies()
 
-    private fun getRates(isAppLaunch: Boolean) = viewModel.getRates(isAppLaunch)
+    private fun getRates() = viewModel.getRates()
 
     private fun convert(amount: Double?, fromCurrency: String?) {
         viewModel.convert(
@@ -191,9 +191,68 @@ class CurrencyConversionFragment : Fragment() {
         )
     }
 
-    private fun getLastUpdateTime() = viewModel.getLastUpdateTime()
+    private suspend fun launchCountDownTimer() {
+        var time = fetchTimeData()
+        val countDownElapseTimeInMillis = if (time != null && time.isTimerRunning) {
+            val currentTimeMillis = System.currentTimeMillis()
+            val timeSpentInBackground = currentTimeMillis - time.appStopTimeMillis
+            time.timeLeftMillis - timeSpentInBackground
+        } else {
+            Constants.UPDATE_INTERVAL * 60000
+        }
+
+        if (time == null) {
+            time = Time()
+        }
+
+        countDownTimer = object : CountDownTimer(countDownElapseTimeInMillis, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                time.isTimerRunning = true
+                time.timeLeftMillis = millisUntilFinished
+                viewModel.setTimeLiveDataValue(time)
+            }
+
+            override fun onFinish() {
+                time.isTimerRunning = false
+                viewModel.setTimeLiveDataValue(time)
+                saveTimeData(time)
+                performCacheUpdate()
+                lifecycleScope.launch {
+                    launchCountDownTimer()
+                }
+            }
+        }.start()
+    }
+
+    private suspend fun fetchTimeData(): Time? {
+        return viewModel.fetchTimeData()
+    }
+
+    private fun saveTimeData(time: Time?) {
+        time?.let {
+            it.appStopTimeMillis = System.currentTimeMillis()
+            viewModel.saveTimeData(it)
+        }
+    }
 
     private fun performCacheUpdate() = viewModel.performCacheUpdate()
+
+    override fun onStart() {
+        super.onStart()
+        lifecycleScope.launch {
+            launchCountDownTimer()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        saveTimeData(viewModel.getTimeLiveData().value)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        countDownTimer.cancel()
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()

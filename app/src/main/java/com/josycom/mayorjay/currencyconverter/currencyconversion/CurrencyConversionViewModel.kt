@@ -5,19 +5,23 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.josycom.mayorjay.currencyconverter.common.domain.model.Currency
 import com.josycom.mayorjay.currencyconverter.common.domain.model.Rate
+import com.josycom.mayorjay.currencyconverter.common.domain.model.Time
 import com.josycom.mayorjay.currencyconverter.common.domain.repository.CurrencyConverterRepository
 import com.josycom.mayorjay.currencyconverter.common.util.Constants
 import com.josycom.mayorjay.currencyconverter.common.util.Resource
 import com.josycom.mayorjay.currencyconverter.common.util.extractCurrencyCode
 import com.josycom.mayorjay.currencyconverter.common.util.isEmptyOrNull
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class CurrencyConversionViewModel @Inject constructor(
-    private val repository: CurrencyConverterRepository
+    private val repository: CurrencyConverterRepository,
+    private val dispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     private val currenciesLiveData: MutableLiveData<Resource<List<Currency>>> = MutableLiveData()
@@ -32,9 +36,9 @@ class CurrencyConversionViewModel @Inject constructor(
     fun getErrorMsgLiveData(): MutableLiveData<String> = errorMsgLiveData
     fun setErrorMsgLiveDataValue(value: String) { errorMsgLiveData.value = value }
 
-    private val performCacheUpdateLiveData: MutableLiveData<Boolean> = MutableLiveData()
-    fun getPerformCacheUpdateLiveData(): MutableLiveData<Boolean> = performCacheUpdateLiveData
-    private fun setPerformCacheUpdateLiveDataValue(value: Boolean) { performCacheUpdateLiveData.value = value }
+    private val timeLiveData: MutableLiveData<Time?> = MutableLiveData()
+    fun getTimeLiveData(): MutableLiveData<Time?> = timeLiveData
+    fun setTimeLiveDataValue(value: Time?) { timeLiveData.value = value }
 
     private var _currencySelected: String? = null
     var currencySelected: String?
@@ -55,14 +59,13 @@ class CurrencyConversionViewModel @Inject constructor(
         }
     }
 
-    fun getRates(isAppLaunch: Boolean) {
+    fun getRates() {
         viewModelScope.launch {
             val rateFlow = repository.getRates()
             rateFlow.collect { rateResource ->
                 setRatesLiveDataValue(rateResource)
             }
         }
-        if (!isAppLaunch) getLastUpdateTime()
     }
 
     fun getSpinnerItems(currencies: List<Currency>): List<String> {
@@ -100,7 +103,6 @@ class CurrencyConversionViewModel @Inject constructor(
                 setRatesLiveDataValue(Resource.Error(ex))
             }
         }
-        getLastUpdateTime()
     }
 
     fun convertCurrency(amount: Double, fromCurrencyRate: Double, toCurrencyRate: Rate): Rate {
@@ -108,20 +110,16 @@ class CurrencyConversionViewModel @Inject constructor(
         return toCurrencyRate.apply { this.amount = baseAmount * this.value }
     }
 
-    fun getLastUpdateTime() {
-        viewModelScope.launch {
-            val timeFlow = repository.getLastUpdateTime()
-            timeFlow.collect { time ->
-                time?.let { setPerformCacheUpdateLiveDataValue(isTimeValid(it)) }
-            }
+    suspend fun fetchTimeData(): Time? {
+        return withContext(dispatcher) {
+            repository.getTime()
         }
     }
 
-    private fun isTimeValid(previousTime: Long): Boolean {
-        val currentTime = System.currentTimeMillis()
-        val diff = currentTime - previousTime
-        val diffInMin = diff / 60000
-        return diffInMin >= Constants.UPDATE_INTERVAL
+    fun saveTimeData(time: Time) {
+        viewModelScope.launch {
+            repository.saveTime(time)
+        }
     }
 
     fun performCacheUpdate() {

@@ -37,6 +37,7 @@ class CurrencyConversionViewModelTest : TestCase() {
     @InjectMocks
     private lateinit var sut: CurrencyConversionViewModel
 
+    @Mock
     private val dispatcher = UnconfinedTestDispatcher()
 
     private val currencyMap = mapOf(
@@ -183,7 +184,7 @@ class CurrencyConversionViewModelTest : TestCase() {
 
     @Test
     fun `test getRates _repository#getRates_is_triggered`(): Unit = runBlocking {
-        sut.getRates(false)
+        sut.getRates()
         Mockito.verify(repository, Mockito.times(1)).getRates()
     }
 

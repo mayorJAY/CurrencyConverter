@@ -8,6 +8,7 @@ import com.josycom.mayorjay.currencyconverter.common.data.cache.model.RateEntity
 import com.josycom.mayorjay.currencyconverter.common.data.cache.model.TimeEntity
 import com.josycom.mayorjay.currencyconverter.common.domain.model.Currency
 import com.josycom.mayorjay.currencyconverter.common.domain.model.Rate
+import com.josycom.mayorjay.currencyconverter.common.domain.model.Time
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -44,12 +45,17 @@ class LocalDataSourceImpl @Inject constructor(
         database.withTransaction {
             dao.deleteAllRates()
             dao.insertRates(rates.map { RateEntity.fromDomain(it) })
-            dao.deleteTime()
-            dao.insertTime(TimeEntity())
         }
     }
 
-    override fun getLastUpdateTime(): Flow<Long?> {
-        return dao.getLastUpdateTime()
+    override suspend fun saveTime(time: Time) {
+        database.withTransaction {
+            dao.deleteTime()
+            dao.insertTime(TimeEntity.fromDomain(time))
+        }
+    }
+
+    override fun getTime(): Time? {
+        return dao.getTime()?.let { TimeEntity.toDomain(it) }
     }
 }
