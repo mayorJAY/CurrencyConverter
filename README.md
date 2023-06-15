@@ -4,7 +4,7 @@
 
 # Currency Converter
 
-This branch has the time check implementation, the App compares the current time against the last update time in order to update the local database with remote data
+This branch has the CountDown Timer implementation, the Timer is launched on App startup and used to update the local database with remote data
 
 ## Project Characteristics
 
