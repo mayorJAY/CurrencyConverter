@@ -4,7 +4,7 @@
 
 # Currency Converter
 
-This branch has the basic time check implementation, the App compares the current time against the last update time in order to update the local database with remote data
+This branch has the basic time check implementation, the App compares the current time against the last update time in order to update the local database with remote data. It also caters for the period the App is not launched or is in the background.
 
 ## Project Characteristics
 
