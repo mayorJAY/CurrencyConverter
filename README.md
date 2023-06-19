@@ -4,7 +4,7 @@
 
 # Currency Converter
 
-This branch has the CountDown Timer implementation, the Timer is launched on App startup and used to update the local database with remote data
+This branch has the CountDown Timer implementation, the Timer is launched on App startup and used to update the local database with remote data when it is done counting down
 
 ## Project Characteristics
 
