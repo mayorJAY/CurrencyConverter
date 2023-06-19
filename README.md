@@ -4,7 +4,12 @@
 
 # Currency Converter
 
-Currency Converter is an offline-first Android Application that allows the user to view a given amount in a given currency converted into other currencies. The App fetches the data from [Open Exchange Rates API](https://openexchangerates.org) and uses Room for offline caching. The App has a Splash Screen and a home page which initially displays the rates of all available Currencies. A user can input any desired amount and select any currency from the list after which the App converts the figure into other currencies and displays the different amounts to the user. To limit bandwidth usage, the App runs a periodic work (every 30 minutes) to update the local database with remote data. It is implemented using Clean Architecture, Model-View-ViewModel (MVVM) pattern and uses Modern Android Development pattern and libraries. Adequate Unit Tests were also implemented in the codebase.
+Currency Converter is an offline-first Android Application that allows the user to view a given amount in a given currency converted into other currencies. The App fetches the data from [Open Exchange Rates API](https://openexchangerates.org) and uses Room for offline caching. It fetches just the conversion rates from the API and performs the conversion logic for the user. The App has a Splash Screen and a home page which initially displays the rates of all available Currencies. A user can input any desired amount and select any currency from the list after which the App converts the figure into other currencies and displays the different amounts to the user. To limit bandwidth usage, the App has 3 different implementations of how to update the local database with remote data periodically (every 30 minutes). These are in separate branches;    
+* [WorkManager Implementation](https://github.com/mayorJAY/CurrencyConverter/tree/main)  
+* [Basic Time Check Implementation](https://github.com/mayorJAY/CurrencyConverter/tree/basic-time-check)  
+* [CountDown Timer Implementation](https://github.com/mayorJAY/CurrencyConverter/tree/count-down-timer)    
+
+It is implemented using Clean Architecture, Model-View-ViewModel (MVVM) pattern and uses Modern Android Development pattern and libraries. Adequate Unit Tests were also implemented in the codebase.
 
 ## Project Characteristics
 
